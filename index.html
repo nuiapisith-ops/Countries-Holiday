@@ -8,19 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script>
-/* ============================================================
-   CONFIG — แก้แค่บล็อกนี้
-   ============================================================ */
+/* ====== CONFIG: แก้ตรงนี้ที่เดียว ====== */
 const CONFIG = {
   SHEET_ID: '1cTrAqSIgMstGpPHNVJ8vt7D-MzIo5OKLX0C6cMJWo74',
   SHEET_NAME: 'All_Countries_Holiday',
   COL: { country: 0, name: 1, start: 2, end: 3 },
-  MAX_LANES_MONTH: 3,
+  MAX_LANES_MONTH: 4,
   TITLE: 'Holiday Calendar',
   SUBTITLE: 'WCL · Markets coverage'
 };
 
-/* ชื่อประเทศ -> ISO2 (เพิ่มได้เรื่อย ๆ) */
+/* ====== ชื่อประเทศ -> ISO2 (เพิ่มได้เรื่อย ๆ) ====== */
 const ISO = {
   'australia':'AU','united states':'US','usa':'US','united kingdom':'GB','uk':'GB','england':'GB',
   'japan':'JP','singapore':'SG','malaysia':'MY','south korea':'KR','korea':'KR','north korea':'KP',
@@ -36,192 +34,201 @@ const ISO = {
   'bangladesh':'BD','pakistan':'PK','nepal':'NP','mongolia':'MN','maldives':'MV'
 };
 
-/* สีฐานต่อประเทศ (เหลือไว้แค่กำหนด hue ที่เหลือ gen เอง) */
+/* ====== สีล็อกประเทศหลัก (โทน muted) ที่เหลือ gen จากชื่อ ====== */
 const PREF_COLOR = {
-  'australia':'#2E9E57','united states':'#D24B4B','united kingdom':'#3D74D6',
-  'japan':'#9B5FC7','singapore':'#1FA39A','malaysia':'#C99036','south korea':'#C9527D'
+  'australia':'#5f8a63','united states':'#bb6e62','united kingdom':'#5f7cb8',
+  'japan':'#8a6fae','singapore':'#3f9b97','malaysia':'#bb934f','south korea':'#bd7a90'
 };
-const MULTI_COLOR = '#5B6B7D'; // วันหยุดที่หลายประเทศหยุดพร้อมกัน
+const MULTI_COLOR = '#5b6b7d';
+
+/* ====== ทวีป (อ้างอิงด้วย ISO2) ====== */
+const CONTINENT = {
+  Asia:['JP','SG','MY','KR','KP','TH','ID','PH','VN','IN','CN','HK','MO','TW','MM','KH','LA','BN','LK','BD','PK','NP','MN','MV'],
+  Oceania:['AU','NZ'],
+  'North America':['US','CA','MX'],
+  'South America':['BR','AR','CL'],
+  Europe:['GB','DE','FR','IT','ES','NL','CH','IE','SE','NO','DK','FI','AT','BE','PT','PL','GR','CZ','HU','RU','TR'],
+  'Middle East':['AE','SA','QA','KW','BH','OM','IL'],
+  Africa:['ZA','EG']
+};
+function continentOf(code){ for(const r in CONTINENT){ if(CONTINENT[r].includes(code)) return r; } return 'Other'; }
 </script>
 <style>
 :root{
-  --bg:#0e141a;
-  --canvas:#151c24;
-  --panel:#1c252f;
-  --panel-2:#232f3b;
-  --grid-line:#27333f;
-  --grid-soft:#1f2a34;
+  --bg:#10161c;
+  --canvas:#161e26;
+  --panel:#1d2730;
+  --panel-2:#243039;
+  --grid-line:#2b3a47;
+  --grid-soft:#222e39;
   --ink:#e9eef3;
-  --ink-dim:#94a6b6;
-  --ink-faint:#647585;
-  --accent:#5b9bf0;
-  --accent-deep:#22344e;
-  --weekend:#11181f;
-  --today:#162a20;
-  --today-ring:#46b884;
+  --ink-dim:#93a4b3;
+  --ink-faint:#627280;
+  --accent:#5a96e8;
+  --accent-deep:#21344d;
+  --weekend:#131a20;
+  --today:#16241d;
+  --today-ring:#5cb98a;
   --radius:12px;
+  --bargrad:rgba(255,255,255,.08);
 }
+:root[data-theme="light"]{
+  --bg:#eef1f5;
+  --canvas:#ffffff;
+  --panel:#f1f4f8;
+  --panel-2:#e7ecf2;
+  --grid-line:#d4dce4;
+  --grid-soft:#e4e9ef;
+  --ink:#1a2530;
+  --ink-dim:#5a6b7a;
+  --ink-faint:#8a9aa8;
+  --accent:#2f6fd0;
+  --accent-deep:#2a4a72;
+  --weekend:#f4f6f9;
+  --today:#e6f4ec;
+  --today-ring:#2e9c6a;
+  --bargrad:rgba(0,0,0,.06);
+}
+:root[data-theme="light"] body{background:radial-gradient(1400px 700px at 88% -12%, rgba(47,111,208,.07), transparent 55%), var(--bg)}
+:root[data-theme="light"] .dow div{color:#d4e0f0}
+:root[data-theme="light"] .dow div.we{color:#b8c8de}
+:root[data-theme="light"] .weekpanel header .wk{color:#cdddf2}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
 body{
   font-family:'Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:
-    radial-gradient(1300px 640px at 88% -12%, rgba(91,155,240,.07), transparent 55%),
-    var(--bg);
-  color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;
-  padding:26px 22px 60px;
+  background:radial-gradient(1400px 700px at 88% -12%, rgba(90,150,232,.06), transparent 55%), var(--bg);
+  color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;padding:26px 22px 60px;
 }
-.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
-.shell{max-width:1320px;margin:0 auto}
+.shell{max-width:1340px;margin:0 auto}
 
-/* Header */
-.topbar{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+/* ---------- Header ---------- */
+.topbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:20px}
 .brand{display:flex;flex-direction:column;gap:2px;margin-right:auto}
-.brand .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600}
-.brand h1{font-size:25px;font-weight:700;letter-spacing:-.015em;line-height:1.05}
+.brand .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.brand h1{font-size:24px;font-weight:700;letter-spacing:-.015em;line-height:1.1}
 .brand .sub{font-size:12px;color:var(--ink-faint)}
-.nav{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.monthlabel{min-width:170px;text-align:center;font-size:18px;font-weight:600;letter-spacing:-.01em;padding:0 4px}
+.nav{display:flex;align-items:center;gap:8px;position:relative}
+.monthlabel{min-width:190px;text-align:center;font-size:18px;font-weight:600;letter-spacing:-.01em;padding:0 6px}
 .monthlabel .yr{color:var(--ink-dim);font-weight:500}
 button.ctl{
   font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);
-  background:var(--panel);border:1px solid var(--grid-line);
-  height:38px;padding:0 14px;border-radius:10px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:7px;
+  background:var(--panel);border:1px solid var(--grid-line);height:38px;padding:0 13px;border-radius:10px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
   transition:background .14s,border-color .14s,transform .06s;user-select:none;
 }
-button.ctl:hover{background:var(--panel-2);border-color:#36475a}
+button.ctl:hover{background:var(--panel-2);border-color:#3a4b5a}
 button.ctl:active{transform:translateY(1px)}
 button.ctl.icon{width:38px;padding:0;justify-content:center;font-size:17px}
-button.ctl.primary{background:var(--accent-deep);border-color:#33507a}
-button.ctl.primary:hover{background:#2c456b}
+button.ctl.primary{background:var(--accent-deep);border-color:#2f4a6b}
+button.ctl.primary:hover{background:#294366}
 button.ctl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button.ctl .badge{
-  background:var(--accent);color:#06101d;font-size:11px;font-weight:700;
-  border-radius:20px;padding:1px 7px;margin-left:1px;
-}
+button.ctl .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--accent);color:#08101a;border-radius:5px;padding:1px 5px;font-weight:600}
 .monthpick input[type=month]{
   font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);
-  background:var(--panel);border:1px solid var(--grid-line);
-  height:38px;padding:0 11px;border-radius:10px;color-scheme:dark;cursor:pointer;
+  background:var(--panel);border:1px solid var(--grid-line);height:38px;padding:0 10px;border-radius:10px;color-scheme:dark;cursor:pointer;
 }
 
-/* Filter popover */
-.filterwrap{position:relative}
-.filterpop{
-  position:absolute;top:46px;right:0;z-index:30;width:300px;
+/* ---------- Filter dropdown ---------- */
+.fwrap{position:relative}
+.fpanel{
+  position:absolute;top:46px;right:0;z-index:30;width:320px;
   background:var(--canvas);border:1px solid var(--grid-line);border-radius:12px;
-  box-shadow:0 18px 50px rgba(0,0,0,.55);padding:14px;display:none;
-  animation:rise .16s ease;
+  box-shadow:0 16px 44px rgba(0,0,0,.5);padding:12px;display:none;
 }
-.filterpop.show{display:block}
-.filterpop .fhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.filterpop .fhead .t{font-size:12px;font-weight:600;color:var(--ink-dim);letter-spacing:.04em;text-transform:uppercase;margin-right:auto}
-.filterpop .fhead button{
-  font-family:inherit;font-size:11.5px;font-weight:600;color:var(--accent);
-  background:none;border:1px solid var(--grid-line);border-radius:7px;
-  padding:3px 9px;cursor:pointer;
-}
-.filterpop .fhead button:hover{background:var(--panel)}
-.flist{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
-.fitem{
-  display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;
-  font-size:13px;transition:background .1s;
-}
+.fpanel.show{display:block;animation:rise .16s ease}
+.fpanel .fhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.fpanel .fhead .t{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-right:auto}
+.fpanel .fhead button{font-family:inherit;font-size:11.5px;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:6px}
+.fpanel .fhead button:hover{background:var(--panel)}
+.fsearch{width:100%;font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--grid-line);border-radius:8px;height:34px;padding:0 11px;margin-bottom:8px}
+.fsearch::placeholder{color:var(--ink-faint)}
+.fsearch:focus{outline:none;border-color:var(--accent)}
+.fchips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.fchip{font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-dim);background:var(--panel);border:1px solid var(--grid-line);border-radius:20px;padding:4px 10px;cursor:pointer;transition:all .12s}
+.fchip:hover{color:var(--ink);border-color:var(--accent);background:var(--panel-2)}
+.flist{display:grid;grid-template-columns:1fr 1fr;gap:2px;max-height:280px;overflow-y:auto}
+.fitem.hidden{display:none}
+.fitem{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:12.5px}
 .fitem:hover{background:var(--panel)}
-.fitem input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
-.fitem .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;min-width:22px}
-.fitem .nm{color:var(--ink-dim)}
+.fitem input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.fitem .cd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600}
 
-/* Calendar */
+/* ---------- Calendar ---------- */
 .cal{background:var(--canvas);border:1px solid var(--grid-line);border-radius:var(--radius);overflow:hidden}
-.dow{display:grid;grid-template-columns:repeat(7,1fr);background:#19222c;border-bottom:1px solid var(--grid-line)}
-.dow div{padding:11px 14px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);text-align:left}
-.dow div.we{color:var(--ink-faint)}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--accent-deep)}
+.dow div{padding:11px 14px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#bcccdf}
+.dow div.we{color:#90a4bc}
 .weekrow{position:relative;border-top:1px solid var(--grid-line)}
 .weekrow:first-child{border-top:none}
 .daygrid{display:grid;grid-template-columns:repeat(7,1fr);position:absolute;inset:0;z-index:0}
-.daycell{border-left:1px solid var(--grid-soft);padding:0}
+.daycell{border-left:1px solid var(--grid-soft);padding:8px 10px}
 .daycell:first-child{border-left:none}
-.daycell.oom{background:rgba(0,0,0,.18)}
+.daycell.oom{background:rgba(0,0,0,.15)}
 .daycell.we{background:var(--weekend)}
-.daycell.we.oom{background:rgba(0,0,0,.24)}
 .daycell.today{background:var(--today)}
-.daynum{font-size:13.5px;font-weight:600;color:var(--ink-dim);padding:9px 12px 0;height:34px;display:flex;align-items:center}
+.daynum{font-size:14px;font-weight:600;color:var(--ink-dim);height:26px;display:flex;align-items:center}
 .daycell.oom .daynum{color:var(--ink-faint);opacity:.55}
-.daycell.today .daynum .n{
-  background:var(--today-ring);color:#04130c;font-weight:700;width:23px;height:23px;border-radius:50%;
-  display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;
-}
-.events{position:relative;z-index:1;padding:34px 0 12px;pointer-events:none}
+.daycell.today .daynum span{background:var(--today-ring);color:#05140d;font-weight:700;min-width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;padding:0 4px}
+.events{position:relative;z-index:1;pointer-events:none}
 .bar{
-  position:absolute;height:25px;border-radius:7px;
-  display:flex;align-items:center;gap:6px;padding:0 8px;
-  font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;
-  pointer-events:auto;cursor:pointer;
-  border-left:3px solid;
-  transition:filter .12s;
+  position:absolute;display:flex;align-items:center;gap:6px;padding:0 9px;
+  border-radius:7px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;
+  pointer-events:auto;cursor:pointer;transition:filter .12s;
 }
-.bar:hover{filter:brightness(1.14)}
-.bar.cont-l{border-top-left-radius:0;border-bottom-left-radius:0;border-left-width:0;box-shadow:inset 3px 0 0 rgba(255,255,255,.25)}
+.bar:hover{filter:brightness(1.14) saturate(1.1)}
+.bar.cont-l{border-top-left-radius:0;border-bottom-left-radius:0}
 .bar.cont-r{border-top-right-radius:0;border-bottom-right-radius:0}
-.bar .nm{overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.bar .codes{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;opacity:.85;letter-spacing:.02em;flex-shrink:0}
-.bar .arrow{flex-shrink:0;opacity:.7;font-size:9px}
+.bar .nm{overflow:hidden;text-overflow:ellipsis}
+.bar .codes{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;opacity:.85;letter-spacing:.02em;flex-shrink:0}
+.bar .arrow{flex-shrink:0;opacity:.7;font-size:10px}
 .more{
-  position:absolute;height:19px;font-size:11px;font-weight:600;color:var(--ink-dim);
+  position:absolute;height:20px;font-size:11px;font-weight:600;color:var(--ink-dim);
   background:var(--panel);border:1px solid var(--grid-line);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;margin-left:4px;
+  display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;
 }
 .more:hover{color:var(--ink);background:var(--panel-2)}
 .weekopen{
   position:absolute;top:7px;right:7px;z-index:2;width:24px;height:24px;border-radius:7px;
-  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-faint);
-  background:var(--panel);border:1px solid var(--grid-line);cursor:pointer;pointer-events:auto;
-  opacity:0;transition:opacity .12s,color .12s;
+  display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink-faint);
+  background:var(--panel);border:1px solid var(--grid-line);cursor:pointer;pointer-events:auto;opacity:0;transition:opacity .12s,color .12s;
 }
 .weekrow:hover .weekopen{opacity:1}
-.weekopen:hover{color:var(--accent);border-color:#3a526f}
+.weekopen:hover{color:var(--accent);border-color:#3a536f}
 
-/* Legend */
-.legend{margin-top:18px;display:flex;flex-wrap:wrap;gap:9px 18px;align-items:center;
-  padding:15px 18px;background:var(--canvas);border:1px solid var(--grid-line);border-radius:var(--radius)}
-.legend .ttl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-right:4px}
-.lg{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
-.lg .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+/* ---------- Legend ---------- */
+.legend{margin-top:18px;display:flex;flex-wrap:wrap;gap:9px 18px;align-items:center;padding:15px 18px;background:var(--canvas);border:1px solid var(--grid-line);border-radius:var(--radius)}
+.legend .ttl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-right:4px}
+.lg{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500}
+.lg .sw{width:12px;height:12px;border-radius:4px;flex-shrink:0}
 .lg .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;color:var(--ink-dim)}
 
-/* Month summary */
-.summary{margin-top:18px}
-.summary .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding:0 2px}
-.summary .shead h2{font-size:16px;font-weight:600;letter-spacing:-.01em}
-.summary .shead .meta{font-size:12.5px;color:var(--ink-faint)}
-.scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.scard{background:var(--canvas);border:1px solid var(--grid-line);border-radius:12px;overflow:hidden}
-.scard .ch{display:flex;align-items:center;gap:9px;padding:12px 15px;border-bottom:1px solid var(--grid-soft);border-left:4px solid}
-.scard .ch .flag{font-size:15px}
-.scard .ch .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
-.scard .ch .cn{font-size:14px;font-weight:600}
-.scard .ch .ct{margin-left:auto;font-size:11px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace}
-.srow{display:flex;align-items:center;gap:10px;padding:9px 15px}
-.srow + .srow{border-top:1px solid var(--grid-soft)}
-.srow .hn{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.srow .rg{font-size:11.5px;color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
-.srow .dc{font-size:11px;font-weight:600;color:var(--ink-dim);background:var(--panel);border-radius:20px;padding:2px 9px;white-space:nowrap;min-width:54px;text-align:center}
-.summary .empty{padding:30px;text-align:center;color:var(--ink-faint);background:var(--canvas);border:1px dashed var(--grid-line);border-radius:12px}
+/* ---------- Monthly summary ---------- */
+.summary{margin-top:18px;background:var(--canvas);border:1px solid var(--grid-line);border-radius:var(--radius);overflow:hidden}
+.summary .sh{display:flex;align-items:baseline;gap:10px;padding:16px 20px;border-bottom:1px solid var(--grid-line)}
+.summary .sh h3{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.summary .sh .cnt{font-size:12.5px;color:var(--ink-faint)}
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:820px){.sumgrid{grid-template-columns:1fr}}
+.sumrow{display:flex;align-items:center;gap:11px;padding:10px 20px;border-bottom:1px solid var(--grid-soft);font-size:13px}
+.sumrow:hover{background:var(--panel)}
+.sumgrid > .sumrow:nth-child(odd){border-right:1px solid var(--grid-soft)}
+@media (max-width:820px){.sumgrid > .sumrow:nth-child(odd){border-right:none}}
+.sumrow .dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.sumrow .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;min-width:26px;flex-shrink:0}
+.sumrow .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sumrow .dates{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-dim);flex-shrink:0}
+.sumrow .days{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--panel-2);border-radius:5px;padding:2px 7px;flex-shrink:0;min-width:42px;text-align:center}
+.sumempty{padding:26px 20px;text-align:center;color:var(--ink-faint);font-size:13px;font-style:italic}
 
-/* Week detail */
-.scrim{position:fixed;inset:0;background:rgba(6,10,14,.7);backdrop-filter:blur(3px);z-index:40;
-  display:none;align-items:flex-start;justify-content:center;padding:44px 20px;overflow-y:auto}
+/* ---------- Week detail ---------- */
+.scrim{position:fixed;inset:0;background:rgba(7,11,15,.68);backdrop-filter:blur(3px);z-index:40;display:none;align-items:flex-start;justify-content:center;padding:44px 20px;overflow-y:auto}
 .scrim.show{display:flex}
-.weekpanel{width:100%;max-width:700px;background:var(--canvas);border:1px solid var(--grid-line);
-  border-radius:15px;overflow:hidden;animation:rise .2s cubic-bezier(.2,.8,.2,1)}
-@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.weekpanel{width:100%;max-width:700px;background:var(--canvas);border:1px solid var(--grid-line);border-radius:16px;overflow:hidden;animation:rise .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .weekpanel header{display:flex;align-items:center;gap:12px;padding:17px 22px;background:var(--accent-deep)}
 .weekpanel header .wk{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9fb6d8;font-weight:600}
 .weekpanel header h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
-.weekpanel header button{margin-left:auto;background:rgba(255,255,255,.08);border:none;color:#fff;
-  width:31px;height:31px;border-radius:8px;cursor:pointer;font-size:16px}
+.weekpanel header button{margin-left:auto;background:rgba(255,255,255,.08);border:none;color:#fff;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:16px}
 .weekpanel header button:hover{background:rgba(255,255,255,.16)}
 .weekbody{padding:8px 0 14px;max-height:64vh;overflow-y:auto}
 .dayblock{padding:6px 22px}
@@ -230,20 +237,19 @@ button.ctl .badge{
 .dayblock .dh .dnum{font-size:15px;font-weight:700}
 .dayblock .dh .dwd{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
 .dayblock.is-today .dh .dnum{color:var(--today-ring)}
-.hrow{display:flex;align-items:center;gap:11px;padding:7px 0}
+.hrow{display:flex;align-items:center;gap:10px;padding:6px 0}
 .hrow .dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
 .hrow .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;min-width:24px}
-.hrow .cn{font-size:13px;color:var(--ink-dim);min-width:112px}
+.hrow .cn{font-size:13px;color:var(--ink-dim);min-width:120px}
 .hrow .hn{font-size:13.5px;font-weight:500}
 .hrow .span{margin-left:auto;font-size:11px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace}
 .emptyday{font-size:12.5px;color:var(--ink-faint);padding:4px 0 8px;font-style:italic}
 
-#tip{position:fixed;z-index:60;pointer-events:none;opacity:0;background:#0a1117;border:1px solid var(--grid-line);
-  border-radius:9px;padding:10px 12px;max-width:270px;box-shadow:0 10px 34px rgba(0,0,0,.5);font-size:12px;transition:opacity .1s}
+/* ---------- Tooltip / states ---------- */
+#tip{position:fixed;z-index:60;pointer-events:none;opacity:0;background:#0b1218;border:1px solid var(--grid-line);border-radius:10px;padding:10px 12px;max-width:270px;box-shadow:0 10px 34px rgba(0,0,0,.5);font-size:12px;transition:opacity .1s}
 #tip .tn{font-weight:600;margin-bottom:3px}
 #tip .tc{color:var(--ink-dim);font-size:11.5px}
 #tip .td{color:var(--ink-faint);font-size:11px;margin-top:3px;font-family:'IBM Plex Mono',monospace}
-
 .state{padding:64px 24px;text-align:center;color:var(--ink-dim)}
 .state .big{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .state code{font-family:'IBM Plex Mono',monospace;background:var(--panel);padding:2px 6px;border-radius:5px;font-size:12px;color:var(--accent)}
@@ -251,20 +257,12 @@ button.ctl .badge{
 @keyframes spin{to{transform:rotate(360deg)}}
 .foot{margin-top:16px;font-size:11.5px;color:var(--ink-faint);text-align:center}
 .foot b{color:var(--ink-dim);font-weight:600}
-
-@media (max-width:820px){
-  body{padding:14px 12px 40px}
-  .brand h1{font-size:20px}
-  .monthlabel{min-width:130px;font-size:15px}
-  .cal{overflow-x:auto}
-  .calinner{min-width:760px}
-}
+@media (max-width:760px){.cal,.summary{overflow-x:auto}.calinner{min-width:760px}.flist{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 </style>
 </head>
 <body>
 <div class="shell">
-
   <div class="topbar">
     <div class="brand">
       <span class="eyebrow" id="eyebrow">WCL · Markets coverage</span>
@@ -272,23 +270,26 @@ button.ctl .badge{
       <span class="sub" id="freshness">—</span>
     </div>
     <div class="nav">
-      <button class="ctl icon" id="prev" title="Previous month" aria-label="Previous month">‹</button>
+      <button class="ctl icon" id="prev" aria-label="Previous month">‹</button>
       <div class="monthlabel" id="monthlabel">—</div>
-      <button class="ctl icon" id="next" title="Next month" aria-label="Next month">›</button>
+      <button class="ctl icon" id="next" aria-label="Next month">›</button>
       <button class="ctl primary" id="today">Today</button>
       <div class="monthpick"><input type="month" id="jump" aria-label="Jump to month"></div>
-      <div class="filterwrap">
-        <button class="ctl" id="filterBtn" title="Filter markets">⛃ Filter <span class="badge" id="filterBadge" style="display:none"></span></button>
-        <div class="filterpop" id="filterPop">
+      <div class="fwrap">
+        <button class="ctl" id="filterBtn">⚲ Filter <span class="badge" id="filterBadge">all</span></button>
+        <div class="fpanel" id="filterPanel">
           <div class="fhead">
             <span class="t">Markets</span>
-            <button id="filterAll">All</button>
-            <button id="filterNone">None</button>
+            <button id="fAll">Select all</button>
+            <button id="fNone">Clear</button>
           </div>
-          <div class="flist" id="filterList"></div>
+          <input type="text" class="fsearch" id="fSearch" placeholder="Search country…" autocomplete="off">
+          <div class="fchips" id="fChips"></div>
+          <div class="flist" id="flist"></div>
         </div>
       </div>
-      <button class="ctl" id="refresh" title="Reload from sheet">↻ Refresh</button>
+      <button class="ctl icon" id="themeBtn" aria-label="Toggle light/dark" title="Toggle theme">◐</button>
+      <button class="ctl" id="refresh">↻ Refresh</button>
     </div>
   </div>
 
@@ -300,8 +301,8 @@ button.ctl .badge{
   <div class="legend" id="legend" style="display:none"></div>
 
   <div class="summary" id="summary" style="display:none">
-    <div class="shead"><h2 id="sumTitle">—</h2><span class="meta" id="sumMeta"></span></div>
-    <div class="scards" id="sumCards"></div>
+    <div class="sh"><h3 id="sumTitle">—</h3><span class="cnt" id="sumCnt"></span></div>
+    <div id="sumBody"></div>
   </div>
 
   <div class="foot" id="foot"></div>
@@ -309,119 +310,80 @@ button.ctl .badge{
 
 <div class="scrim" id="scrim">
   <div class="weekpanel" role="dialog" aria-modal="true">
-    <header>
-      <div><div class="wk" id="wkEyebrow">Week</div><h2 id="wkTitle">—</h2></div>
-      <button id="wkClose" aria-label="Close">✕</button>
-    </header>
+    <header><div><div class="wk" id="wkEyebrow">Week</div><h2 id="wkTitle">—</h2></div><button id="wkClose" aria-label="Close">✕</button></header>
     <div class="weekbody" id="wkBody"></div>
   </div>
 </div>
 <div id="tip"></div>
 
 <script>
-/* ---------- country style ---------- */
-function key(c){ return (c||'').toString().toLowerCase().trim(); }
-function codeFor(c){const k=key(c);if(ISO[k])return ISO[k];const l=(c||'').replace(/[^A-Za-z]/g,'');return (l.substring(0,2)||'??').toUpperCase();}
-function flagFor(c){const code=ISO[key(c)];if(!code)return '🏳️';return String.fromCodePoint(...[...code].map(ch=>0x1F1E6+ch.charCodeAt(0)-65));}
-function baseColor(c){const k=key(c);if(PREF_COLOR[k])return PREF_COLOR[k];let h=0;for(let i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))>>>0;return hslHex(h%360,55,52);}
-function hslHex(h,s,l){s/=100;l/=100;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r,g,b;
-  if(h<60){r=c;g=x;b=0}else if(h<120){r=x;g=c;b=0}else if(h<180){r=0;g=c;b=x}else if(h<240){r=0;g=x;b=c}else if(h<300){r=x;g=0;b=c}else{r=c;g=0;b=x}
-  const f=v=>('0'+Math.round((v+m)*255).toString(16)).slice(-2);return '#'+f(r)+f(g)+f(b);}
-function hexHsl(hex){let r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h,s,l=(mx+mn)/2;
-  if(mx===mn){h=s=0}else{const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);
-    h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h*=60}
-  return {h:Math.round(h),s:Math.round(s*100),l:Math.round(l*100)};}
-// muted bar styling for dark theme: soft tinted bg + light colored text + accent border
-function barStyle(hex,multi){
-  const {h,s}=hexHsl(hex);
-  const sat=multi?Math.round(s*0.5):Math.round(s*0.62);
-  return {
-    text:`hsl(${h},${sat}%,80%)`,
-    bg:`hsla(${h},${sat}%,55%,0.15)`,
-    border:hslHex(h,Math.min(sat+10,70),55)
-  };
-}
+/* ===== country style ===== */
+function key(c){return(c||'').toString().toLowerCase().trim()}
+function codeFor(c){const k=key(c);if(ISO[k])return ISO[k];const l=(c||'').replace(/[^A-Za-z]/g,'');return(l.substring(0,2)||'??').toUpperCase()}
+function flagFor(c){const code=ISO[key(c)];if(!code)return'🏳️';return String.fromCodePoint(...[...code].map(ch=>0x1F1E6+ch.charCodeAt(0)-65))}
+function colorFor(c){const k=key(c);if(PREF_COLOR[k])return PREF_COLOR[k];let h=0;for(let i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))>>>0;return hsl(h%360,42,48)}
+function hsl(h,s,l){s/=100;l/=100;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r,g,b;if(h<60){r=c;g=x;b=0}else if(h<120){r=x;g=c;b=0}else if(h<180){r=0;g=c;b=x}else if(h<240){r=0;g=x;b=c}else if(h<300){r=x;g=0;b=c}else{r=c;g=0;b=x}const f=v=>('0'+Math.round((v+m)*255).toString(16)).slice(-2);return'#'+f(r)+f(g)+f(b)}
+function textOn(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);const L=(0.2126*r+0.7152*g+0.0722*b)/255;return L>0.62?'#16201a':'#ffffff'}
 
-/* ---------- date helpers ---------- */
+/* ===== date helpers ===== */
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const DAY=86400000;
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const DAY=86400000;
 function ymd(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n)}
 function sameDay(a,b){return a.getTime()===b.getTime()}
 function daysBetween(a,b){return Math.round((ymd(b)-ymd(a))/DAY)}
 function fmtShort(d){return d.getDate()+' '+MON[d.getMonth()]}
 function fmtLong(d){return DOW[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()}
-function parseDate(v){
-  if(v==null||v==='')return null;
-  if(v instanceof Date)return ymd(v);
-  const s=v.toString().trim();
-  let m=s.match(/^Date\((\d+),(\d+),(\d+)/);if(m)return new Date(+m[1],+m[2],+m[3]);
-  m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;return new Date(y,mo-1,d)}
-  const p=new Date(s);if(!isNaN(p))return ymd(p);return null;
-}
+function parseDate(v){if(v==null||v==='')return null;if(v instanceof Date)return ymd(v);const s=v.toString().trim();let m=s.match(/^Date\((\d+),(\d+),(\d+)/);if(m)return new Date(+m[1],+m[2],+m[3]);m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;return new Date(y,mo-1,d)}const p=new Date(s);if(!isNaN(p))return ymd(p);return null}
 
-/* ---------- state ---------- */
-let HOLIDAYS=[];            // full dataset
-let SELECTED=null;          // Set of selected country keys, null=all
+/* ===== state ===== */
+let HOLIDAYS=[];
+let activeCountries=new Set();   // key(country)
 let viewDate=new Date();viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
 
-function loadFilter(){try{const s=localStorage.getItem('wcl_hol_filter');if(s){const a=JSON.parse(s);SELECTED=new Set(a)}}catch(e){}}
-function saveFilter(){try{if(SELECTED)localStorage.setItem('wcl_hol_filter',JSON.stringify([...SELECTED]));else localStorage.removeItem('wcl_hol_filter')}catch(e){}}
-function isSel(country){return !SELECTED||SELECTED.has(key(country))}
-function dataFiltered(){return HOLIDAYS.filter(h=>isSel(h.country))}
-
-/* ---------- fetch ---------- */
-function gvizUrl(){return `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}&headers=1`;}
+function gvizUrl(){return`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}&headers=1`}
 async function loadData(){
   const res=await fetch(gvizUrl());const txt=await res.text();
   const json=JSON.parse(txt.replace(/^[\s\S]*?setResponse\(/,'').replace(/\);?\s*$/,''));
   if(json.status==='error')throw new Error((json.errors&&json.errors[0]&&json.errors[0].detailed_message)||'gviz error');
   const rows=json.table.rows||[];const out=[];
-  rows.forEach(r=>{
-    const c=r.c||[];const cell=i=>c[i]?(c[i].v!=null?c[i].v:(c[i].f!=null?c[i].f:'')):'';
-    const country=(cell(CONFIG.COL.country)||'').toString().trim();
-    const name=(cell(CONFIG.COL.name)||'').toString().trim();
-    if(!country||!name)return;
-    const start=parseDate(cell(CONFIG.COL.start));if(!start)return;
+  rows.forEach(r=>{const c=r.c||[];const cell=i=>c[i]?(c[i].v!=null?c[i].v:(c[i].f!=null?c[i].f:'')):'';
+    const country=(cell(CONFIG.COL.country)||'').toString().trim();const name=(cell(CONFIG.COL.name)||'').toString().trim();
+    if(!country||!name)return;const start=parseDate(cell(CONFIG.COL.start));if(!start)return;
     let end=parseDate(cell(CONFIG.COL.end))||start;if(end<start)end=start;
-    out.push({country,name,start,end,code:codeFor(country),color:baseColor(country),flag:flagFor(country),span:daysBetween(start,end)+1});
-  });
+    out.push({country,name,start,end,code:codeFor(country),color:colorFor(country),flag:flagFor(country)});});
   HOLIDAYS=out;
+  const all=[...new Set(HOLIDAYS.map(h=>key(h.country)))];
+  if(activeCountries.size===0) all.forEach(k=>activeCountries.add(k));
+  buildFilter();
 }
+function visible(){return HOLIDAYS.filter(h=>activeCountries.has(key(h.country)))}
 
-/* ---------- month grid ---------- */
+/* ===== month grid ===== */
 function buildWeeks(monthDate){
   const y=monthDate.getFullYear(),m=monthDate.getMonth();
   const firstW=new Date(y,m,1).getDay();const dim=new Date(y,m+1,0).getDate();
   const nWeeks=Math.ceil((firstW+dim)/7);const gridStart=new Date(y,m,1-firstW);
-  const weeks=[];
-  for(let i=0;i<nWeeks;i++){const days=[];for(let j=0;j<7;j++)days.push(addDays(gridStart,i*7+j));weeks.push(days)}
-  return weeks;
+  const weeks=[];for(let i=0;i<nWeeks;i++){const days=[];for(let j=0;j<7;j++)days.push(addDays(gridStart,i*7+j));weeks.push(days)}return weeks;
 }
-function eventsForWeek(weekDays,data){
+function eventsForWeek(weekDays,source){
   const wkStart=weekDays[0],wkEnd=weekDays[6];const merged={};
-  data.forEach(h=>{
-    if(h.end<wkStart||h.start>wkEnd)return;
+  source.forEach(h=>{if(h.end<wkStart||h.start>wkEnd)return;
     const k=h.name.toLowerCase()+'|'+h.start.getTime()+'|'+h.end.getTime();
     if(!merged[k])merged[k]={name:h.name,start:h.start,end:h.end,countries:[]};
-    if(!merged[k].countries.some(x=>x.code===h.code))merged[k].countries.push({country:h.country,code:h.code,color:h.color,flag:h.flag});
-  });
-  const evs=Object.values(merged).map(e=>{
-    e.countries.sort((a,b)=>a.code.localeCompare(b.code));
+    if(!merged[k].countries.some(x=>x.code===h.code))merged[k].countries.push({country:h.country,code:h.code,color:h.color,flag:h.flag});});
+  const evs=Object.values(merged).map(e=>{e.countries.sort((a,b)=>a.code.localeCompare(b.code));
     const segStart=e.start<wkStart?wkStart:e.start,segEnd=e.end>wkEnd?wkEnd:e.end;
     e.colStart=daysBetween(wkStart,segStart);e.colEnd=daysBetween(wkStart,segEnd);
     e.contL=e.start<wkStart;e.contR=e.end>wkEnd;e.multi=e.countries.length>1;
-    e.baseHex=e.multi?MULTI_COLOR:e.countries[0].color;e.span=daysBetween(e.start,e.end)+1;
-    return e;
-  });
+    e.color=e.multi?MULTI_COLOR:e.countries[0].color;e.span=daysBetween(e.start,e.end)+1;return e;});
   evs.sort((a,b)=>a.colStart-b.colStart||(b.colEnd-b.colStart)-(a.colEnd-a.colStart)||a.name.localeCompare(b.name));
-  const laneEnds=[];
-  evs.forEach(e=>{let lane=0;while(lane<laneEnds.length&&laneEnds[lane]>=e.colStart)lane++;laneEnds[lane]=e.colEnd;e.lane=lane;});
+  const laneEnds=[];evs.forEach(e=>{let lane=0;while(lane<laneEnds.length&&laneEnds[lane]>=e.colStart)lane++;laneEnds[lane]=e.colEnd;e.lane=lane;});
   return evs;
 }
+
+const DAYNUM_OFFSET=38, LANE_H=30, BAR_H=25;
 
 function render(){
   document.getElementById('title').textContent=CONFIG.TITLE;
@@ -429,222 +391,196 @@ function render(){
   document.getElementById('monthlabel').innerHTML=MONTHS[viewDate.getMonth()]+' <span class="yr">'+viewDate.getFullYear()+'</span>';
   document.getElementById('jump').value=viewDate.getFullYear()+'-'+String(viewDate.getMonth()+1).padStart(2,'0');
 
-  const data=dataFiltered();
   const dow=document.getElementById('dow');dow.innerHTML='';
   DOW.forEach((d,i)=>{const el=document.createElement('div');el.textContent=d;if(i===0||i===6)el.className='we';dow.appendChild(el)});
 
+  const src=visible();
   const weeks=buildWeeks(viewDate);const today=ymd(new Date());
   const host=document.getElementById('weeks');host.innerHTML='';
-  const MAX=CONFIG.MAX_LANES_MONTH,laneH=29,colW=100/7;
+  const MAX=CONFIG.MAX_LANES_MONTH;
 
   weeks.forEach((days,wi)=>{
-    const evs=eventsForWeek(days,data);
+    const evs=eventsForWeek(days,src);
     const maxLane=evs.reduce((mx,e)=>Math.max(mx,e.lane),-1);
     const shownLanes=Math.min(maxLane+1,MAX);
     const overflow=maxLane+1>MAX;
-    const rowH=34+Math.max(shownLanes,1)*laneH+(overflow?22:10)+6;
+    const rowH=DAYNUM_OFFSET+Math.max(shownLanes,1)*LANE_H+(overflow?22:8);
 
     const wr=document.createElement('div');wr.className='weekrow';wr.style.minHeight=rowH+'px';
     const dg=document.createElement('div');dg.className='daygrid';
-    days.forEach(d=>{
-      const cell=document.createElement('div');cell.className='daycell';
-      const oom=d.getMonth()!==viewDate.getMonth(),we=d.getDay()===0||d.getDay()===6,isT=sameDay(d,today);
-      if(oom)cell.classList.add('oom');if(we)cell.classList.add('we');if(isT)cell.classList.add('today');
-      cell.innerHTML='<div class="daynum"><span class="'+(isT?'n':'')+'">'+d.getDate()+'</span></div>';
-      dg.appendChild(cell);
-    });
+    days.forEach(d=>{const cell=document.createElement('div');cell.className='daycell';
+      if(d.getMonth()!==viewDate.getMonth())cell.classList.add('oom');
+      if(d.getDay()===0||d.getDay()===6)cell.classList.add('we');
+      const isToday=sameDay(d,today);if(isToday)cell.classList.add('today');
+      cell.innerHTML='<div class="daynum"><span>'+d.getDate()+'</span></div>';dg.appendChild(cell);});
     wr.appendChild(dg);
 
     const ev=document.createElement('div');ev.className='events';ev.style.height=rowH+'px';
+    const colW=100/7;
     evs.filter(e=>e.lane<MAX).forEach(e=>{
-      const st=barStyle(e.baseHex,e.multi);
-      const bar=document.createElement('div');
-      bar.className='bar'+(e.contL?' cont-l':'')+(e.contR?' cont-r':'');
-      bar.style.left='calc('+(e.colStart*colW)+'% + 4px)';
-      bar.style.width='calc('+((e.colEnd-e.colStart+1)*colW)+'% - 8px)';
-      bar.style.top=(e.lane*laneH)+'px';
-      bar.style.background=st.bg;bar.style.color=st.text;bar.style.borderLeftColor=st.border;
+      const bar=document.createElement('div');bar.className='bar'+(e.contL?' cont-l':'')+(e.contR?' cont-r':'');
+      bar.style.left='calc('+(e.colStart*colW)+'% + 3px)';
+      bar.style.width='calc('+((e.colEnd-e.colStart+1)*colW)+'% - 6px)';
+      bar.style.top=(DAYNUM_OFFSET+e.lane*LANE_H)+'px';bar.style.height=BAR_H+'px';
+      bar.style.background=e.color;bar.style.color=textOn(e.color);
       const codes=e.countries.map(x=>x.code).join(' ');
       bar.innerHTML=(e.contL?'<span class="arrow">◂</span>':'')+'<span class="nm">'+esc(e.name)+'</span><span class="codes">'+esc(codes)+'</span>'+(e.contR?'<span class="arrow">▸</span>':'');
       attachTip(bar,e);bar.addEventListener('click',()=>openWeek(wi,days));ev.appendChild(bar);
     });
-    if(overflow){
-      for(let col=0;col<7;col++){
-        const hidden=evs.filter(e=>e.lane>=MAX&&e.colStart<=col&&e.colEnd>=col).length;
-        if(hidden>0){
-          const more=document.createElement('div');more.className='more';
-          more.style.left='calc('+(col*colW)+'% + 4px)';more.style.width='calc('+colW+'% - 8px)';
-          more.style.top=(MAX*laneH)+'px';more.textContent='+'+hidden+' more';
-          more.addEventListener('click',()=>openWeek(wi,days));ev.appendChild(more);
-        }
-      }
-    }
+    if(overflow){for(let col=0;col<7;col++){const hidden=evs.filter(e=>e.lane>=MAX&&e.colStart<=col&&e.colEnd>=col).length;
+      if(hidden>0){const more=document.createElement('div');more.className='more';
+        more.style.left='calc('+(col*colW)+'% + 3px)';more.style.width='calc('+colW+'% - 6px)';more.style.top=(DAYNUM_OFFSET+MAX*LANE_H)+'px';
+        more.textContent='+'+hidden+' more';more.addEventListener('click',()=>openWeek(wi,days));ev.appendChild(more);}}}
     wr.appendChild(ev);
     const open=document.createElement('div');open.className='weekopen';open.textContent='⤢';open.title='Open week detail';
     open.addEventListener('click',()=>openWeek(wi,days));wr.appendChild(open);
     host.appendChild(wr);
   });
 
-  renderLegendAndSummary(data);
+  renderLegend(src);
+  renderSummary(src);
   const f=document.getElementById('freshness');
   f.textContent='Updated '+new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 
-/* legend + summary scoped to current month */
-function monthHolidays(data){
-  const y=viewDate.getFullYear(),m=viewDate.getMonth();
-  const mStart=new Date(y,m,1),mEnd=new Date(y,m+1,0);
-  return data.filter(h=>h.end>=mStart&&h.start<=mEnd);
+function monthHolidays(src){
+  const ms=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
+  const me=new Date(viewDate.getFullYear(),viewDate.getMonth()+1,0);
+  return src.filter(h=>h.end>=ms&&h.start<=me);
 }
-function renderLegendAndSummary(data){
-  const mh=monthHolidays(data);
-  const monthLabel=MONTHS[viewDate.getMonth()]+' '+viewDate.getFullYear();
 
-  // legend (month-scoped)
+function renderLegend(src){
   const lg=document.getElementById('legend');
-  const set=[...new Set(mh.map(h=>h.country))].sort();
-  if(!set.length){lg.style.display='none';}
-  else{
-    lg.style.display='flex';
-    lg.innerHTML='<span class="ttl">'+set.length+' markets off in '+MON[viewDate.getMonth()]+'</span>'+
-      set.map(c=>'<span class="lg"><span class="sw" style="background:'+baseColor(c)+'"></span><span class="cd">'+codeFor(c)+'</span>'+flagFor(c)+' '+esc(c)+'</span>').join('');
-  }
-
-  // summary cards (month-scoped, grouped by country)
-  const sum=document.getElementById('summary');
-  const byC={};
-  mh.forEach(h=>{const k=h.country;(byC[k]=byC[k]||[]).push(h)});
-  const countries=Object.keys(byC).sort();
-  document.getElementById('sumTitle').textContent=monthLabel+' · holiday summary';
-  const totalDays=mh.reduce((s,h)=>{ // count days that fall within the month
-    const y=viewDate.getFullYear(),m=viewDate.getMonth();
-    const a=h.start<new Date(y,m,1)?new Date(y,m,1):h.start;
-    const b=h.end>new Date(y,m+1,0)?new Date(y,m+1,0):h.end;
-    return s+daysBetween(a,b)+1;
-  },0);
-  document.getElementById('sumMeta').textContent=countries.length+' markets · '+mh.length+' holidays';
-
-  const cards=document.getElementById('sumCards');
-  if(!countries.length){sum.style.display='block';cards.innerHTML='';
-    document.getElementById('sumCards').innerHTML='<div class="empty">No holidays in '+monthLabel+' for the selected markets.</div>';
-    return;
-  }
-  sum.style.display='block';
-  cards.innerHTML=countries.map(c=>{
-    const col=baseColor(c),code=codeFor(c),flag=flagFor(c);
-    const list=byC[c].slice().sort((a,b)=>a.start-b.start);
-    const rows=list.map(h=>{
-      const rg=h.span>1?fmtShort(h.start)+' → '+fmtShort(h.end):fmtShort(h.start);
-      const dc=h.span+(h.span>1?' days':' day');
-      return '<div class="srow"><span class="hn">'+esc(h.name)+'</span><span class="rg">'+rg+'</span><span class="dc">'+dc+'</span></div>';
-    }).join('');
-    return '<div class="scard"><div class="ch" style="border-left-color:'+col+'">'+
-      '<span class="flag">'+flag+'</span><span class="cd" style="color:'+col+'">'+code+'</span>'+
-      '<span class="cn">'+esc(c)+'</span><span class="ct">'+list.length+'×</span></div>'+rows+'</div>';
-  }).join('');
-
-  // footer
-  document.getElementById('foot').innerHTML=
-    set.length+' markets with holidays in '+monthLabel+' · '+mh.length+' records shown · source sheet <b>'+esc(CONFIG.SHEET_NAME)+'</b>';
+  const inMonth=monthHolidays(src);
+  const set=[...new Set(inMonth.map(h=>h.country))].sort();
+  if(!set.length){lg.style.display='none';return}
+  lg.style.display='flex';
+  lg.innerHTML='<span class="ttl">'+set.length+' active this month</span>'+set.map(c=>{
+    const col=colorFor(c),code=codeFor(c),flag=flagFor(c);
+    return'<span class="lg"><span class="sw" style="background:'+col+'"></span><span class="cd">'+code+'</span>'+flag+' '+esc(c)+'</span>';}).join('');
 }
 
-/* ---------- filter UI ---------- */
-function buildFilterList(){
+function renderSummary(src){
+  const sm=document.getElementById('summary');
+  const inMonth=monthHolidays(src).slice().sort((a,b)=>a.start-b.start||a.country.localeCompare(b.country)||a.name.localeCompare(b.name));
+  document.getElementById('sumTitle').textContent=MONTHS[viewDate.getMonth()]+' '+viewDate.getFullYear()+' · holidays';
+  document.getElementById('sumCnt').textContent=inMonth.length+' records · '+new Set(inMonth.map(h=>h.country)).size+' markets';
+  const body=document.getElementById('sumBody');
+  sm.style.display='block';
+  if(!inMonth.length){body.innerHTML='<div class="sumempty">No holidays this month for the selected markets.</div>';return}
+  body.innerHTML='<div class="sumgrid">'+inMonth.map(h=>{
+    const span=daysBetween(h.start,h.end)+1;
+    const dates=span>1?fmtShort(h.start)+' – '+fmtShort(h.end):fmtShort(h.start);
+    return'<div class="sumrow"><span class="dot" style="background:'+h.color+'"></span>'+
+      '<span class="cd" style="color:'+h.color+'">'+h.code+'</span>'+
+      '<span class="nm">'+h.flag+' '+esc(h.name)+'</span>'+
+      '<span class="dates">'+dates+'</span>'+
+      '<span class="days">'+span+'d</span></div>';}).join('')+'</div>';
+  document.getElementById('foot').innerHTML=HOLIDAYS.length+' total records · sheet <b>'+esc(CONFIG.SHEET_NAME)+'</b>';
+}
+
+/* ===== filter ===== */
+function buildFilter(){
   const all=[...new Set(HOLIDAYS.map(h=>h.country))].sort();
-  const list=document.getElementById('filterList');
-  list.innerHTML=all.map(c=>{
-    const checked=isSel(c)?'checked':'';
-    return '<label class="fitem"><input type="checkbox" data-c="'+esc(key(c))+'" '+checked+'>'+
-      '<span class="cd" style="color:'+baseColor(c)+'">'+codeFor(c)+'</span>'+flagFor(c)+
-      ' <span class="nm">'+esc(c)+'</span></label>';
-  }).join('');
-  list.querySelectorAll('input').forEach(cb=>cb.addEventListener('change',onFilterChange));
-  updateFilterBadge();
+  // continent quick-select chips (เฉพาะทวีปที่มีประเทศใน data จริง)
+  const byCont={};
+  all.forEach(c=>{const r=continentOf(codeFor(c));(byCont[r]=byCont[r]||[]).push(key(c))});
+  const chips=document.getElementById('fChips');
+  chips.innerHTML=Object.keys(byCont).sort().map(r=>'<button class="fchip" data-r="'+esc(r)+'">'+esc(r)+' ('+byCont[r].length+')</button>').join('');
+  chips.querySelectorAll('.fchip').forEach(btn=>btn.addEventListener('click',()=>{
+    const ks=byCont[btn.dataset.r];
+    const allOn=ks.every(k=>activeCountries.has(k));
+    ks.forEach(k=>{ if(allOn) activeCountries.delete(k); else activeCountries.add(k); }); // toggle ทั้งทวีป
+    buildFilter();render();
+  }));
+  // country checkbox list
+  const list=document.getElementById('flist');
+  list.innerHTML=all.map(c=>{const k=key(c),col=colorFor(c),code=codeFor(c),flag=flagFor(c);
+    return'<label class="fitem" data-name="'+esc(c.toLowerCase())+'" data-code="'+esc(code.toLowerCase())+'"><input type="checkbox" data-c="'+esc(k)+'" '+(activeCountries.has(k)?'checked':'')+'>'+
+      '<span class="cd" style="color:'+col+'">'+code+'</span><span>'+flag+' '+esc(c)+'</span></label>';}).join('');
+  list.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{
+    const k=inp.dataset.c;if(inp.checked)activeCountries.add(k);else activeCountries.delete(k);updateBadge();render();}));
+  applySearch();
+  updateBadge();
 }
-function onFilterChange(){
-  const all=[...new Set(HOLIDAYS.map(h=>key(h.country)))];
-  const checked=[...document.querySelectorAll('#filterList input:checked')].map(cb=>cb.dataset.c);
-  SELECTED=(checked.length===all.length)?null:new Set(checked);
-  saveFilter();updateFilterBadge();render();
+function applySearch(){
+  const q=(document.getElementById('fSearch').value||'').toLowerCase().trim();
+  document.querySelectorAll('#flist .fitem').forEach(it=>{
+    const hit=!q||it.dataset.name.includes(q)||it.dataset.code.includes(q);
+    it.classList.toggle('hidden',!hit);
+  });
 }
-function updateFilterBadge(){
-  const all=[...new Set(HOLIDAYS.map(h=>key(h.country)))];
+function updateBadge(){
+  const total=new Set(HOLIDAYS.map(h=>key(h.country))).size;
   const b=document.getElementById('filterBadge');
-  if(!SELECTED||SELECTED.size===all.length){b.style.display='none';}
-  else{b.style.display='inline-block';b.textContent=SELECTED.size+'/'+all.length;}
+  b.textContent=(activeCountries.size>=total)?'all':activeCountries.size+'/'+total;
 }
-document.getElementById('filterBtn').onclick=e=>{e.stopPropagation();document.getElementById('filterPop').classList.toggle('show');};
-document.getElementById('filterPop').addEventListener('click',e=>e.stopPropagation());
-document.addEventListener('click',()=>document.getElementById('filterPop').classList.remove('show'));
-document.getElementById('filterAll').onclick=()=>{SELECTED=null;saveFilter();buildFilterList();render();};
-document.getElementById('filterNone').onclick=()=>{SELECTED=new Set();saveFilter();buildFilterList();render();};
 
-/* ---------- week detail ---------- */
+/* ===== week detail ===== */
 function openWeek(wi,days){
-  const data=dataFiltered();const today=ymd(new Date());
+  const today=ymd(new Date());const src=visible();
   document.getElementById('wkEyebrow').textContent='Week '+(wi+1);
   document.getElementById('wkTitle').textContent=fmtShort(days[0])+' – '+fmtLong(days[6]);
-  let html='';
-  days.forEach(d=>{
-    const occ=[];data.forEach(h=>{if(d>=h.start&&d<=h.end)occ.push(h)});
-    occ.sort((a,b)=>a.country.localeCompare(b.country));
-    const isT=sameDay(d,today);
-    html+='<div class="dayblock'+(isT?' is-today':'')+'"><div class="dh"><span class="dnum">'+d.getDate()+' '+MON[d.getMonth()]+'</span><span class="dwd">'+DOW[d.getDay()]+'</span></div>';
-    if(!occ.length)html+='<div class="emptyday">No holidays</div>';
-    else occ.forEach(h=>{
-      let spanTxt='';
-      if(h.span>1){const idx=daysBetween(h.start,d)+1;spanTxt=fmtShort(h.start)+'–'+fmtShort(h.end)+' · '+idx+'/'+h.span;}
-      html+='<div class="hrow"><span class="dot" style="background:'+h.color+'"></span><span class="cd" style="color:'+h.color+'">'+h.code+'</span><span class="cn">'+h.flag+' '+esc(h.country)+'</span><span class="hn">'+esc(h.name)+'</span>'+(spanTxt?'<span class="span">'+spanTxt+'</span>':'')+'</div>';
-    });
-    html+='</div>';
-  });
-  document.getElementById('wkBody').innerHTML=html;
-  document.getElementById('scrim').classList.add('show');
+  const body=document.getElementById('wkBody');let html='';
+  days.forEach(d=>{const occ=[];src.forEach(h=>{if(d>=h.start&&d<=h.end)occ.push(h)});
+    occ.sort((a,b)=>a.country.localeCompare(b.country));const isToday=sameDay(d,today);
+    html+='<div class="dayblock'+(isToday?' is-today':'')+'"><div class="dh"><span class="dnum">'+d.getDate()+' '+MON[d.getMonth()]+'</span><span class="dwd">'+DOW[d.getDay()]+'</span></div>';
+    if(!occ.length){html+='<div class="emptyday">No holidays</div>';}
+    else{occ.forEach(h=>{const span=daysBetween(h.start,h.end)+1;let spanTxt='';
+      if(span>1){const idx=daysBetween(h.start,d)+1;spanTxt=fmtShort(h.start)+'–'+fmtShort(h.end)+' · '+idx+'/'+span;}
+      html+='<div class="hrow"><span class="dot" style="background:'+h.color+'"></span><span class="cd" style="color:'+h.color+'">'+h.code+'</span><span class="cn">'+h.flag+' '+esc(h.country)+'</span><span class="hn">'+esc(h.name)+'</span>'+(spanTxt?'<span class="span">'+spanTxt+'</span>':'')+'</div>';});}
+    html+='</div>';});
+  body.innerHTML=html;document.getElementById('scrim').classList.add('show');
 }
 function closeWeek(){document.getElementById('scrim').classList.remove('show')}
 
-/* ---------- tooltip ---------- */
+/* ===== tooltip ===== */
 const tip=document.getElementById('tip');
-function attachTip(el,e){
-  el.addEventListener('mousemove',ev=>{
-    const codes=e.countries.map(c=>c.flag+' '+c.country).join(', ');
-    const span=e.span>1?fmtShort(e.start)+' – '+fmtShort(e.end)+' ('+e.span+' days)':fmtLong(e.start);
-    tip.innerHTML='<div class="tn">'+esc(e.name)+'</div><div class="tc">'+esc(codes)+'</div><div class="td">'+span+'</div>';
-    tip.style.opacity='1';
-    let x=ev.clientX+14,y=ev.clientY+14;const r=tip.getBoundingClientRect();
-    if(x+r.width>innerWidth-10)x=ev.clientX-r.width-14;if(y+r.height>innerHeight-10)y=ev.clientY-r.height-14;
-    tip.style.left=x+'px';tip.style.top=y+'px';
-  });
-  el.addEventListener('mouseleave',()=>{tip.style.opacity='0'});
-}
+function attachTip(el,e){el.addEventListener('mousemove',ev=>{
+  const codes=e.countries.map(c=>c.flag+' '+c.country).join(', ');
+  const span=e.span>1?fmtShort(e.start)+' – '+fmtShort(e.end)+' ('+e.span+' days)':fmtLong(e.start);
+  tip.innerHTML='<div class="tn">'+esc(e.name)+'</div><div class="tc">'+esc(codes)+'</div><div class="td">'+span+'</div>';
+  tip.style.opacity='1';let x=ev.clientX+14,y=ev.clientY+14;const r=tip.getBoundingClientRect();
+  if(x+r.width>innerWidth-10)x=ev.clientX-r.width-14;if(y+r.height>innerHeight-10)y=ev.clientY-r.height-14;
+  tip.style.left=x+'px';tip.style.top=y+'px';});
+  el.addEventListener('mouseleave',()=>{tip.style.opacity='0'});}
 
-/* ---------- util ---------- */
-function esc(s){return (s||'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function esc(s){return(s||'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
-/* ---------- controls ---------- */
+/* ===== controls ===== */
 function go(delta){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+delta,1);render()}
 document.getElementById('prev').onclick=()=>go(-1);
 document.getElementById('next').onclick=()=>go(1);
 document.getElementById('today').onclick=()=>{const n=new Date();viewDate=new Date(n.getFullYear(),n.getMonth(),1);render()};
 document.getElementById('jump').onchange=e=>{const m=e.target.value.match(/^(\d{4})-(\d{2})$/);if(m){viewDate=new Date(+m[1],+m[2]-1,1);render()}};
-document.getElementById('refresh').onclick=async()=>{const btn=document.getElementById('refresh');btn.textContent='↻ Loading…';try{await loadData();buildFilterList();render()}catch(err){showError(err)}btn.textContent='↻ Refresh';};
+document.getElementById('refresh').onclick=async()=>{const btn=document.getElementById('refresh');btn.textContent='↻ Loading…';try{await loadData();render()}catch(err){showError(err)}btn.textContent='↻ Refresh'};
+document.getElementById('filterBtn').onclick=e=>{e.stopPropagation();document.getElementById('filterPanel').classList.toggle('show')};
+document.getElementById('filterPanel').onclick=e=>e.stopPropagation();
+document.addEventListener('click',()=>document.getElementById('filterPanel').classList.remove('show'));
+document.getElementById('fAll').onclick=()=>{HOLIDAYS.forEach(h=>activeCountries.add(key(h.country)));buildFilter();render()};
+document.getElementById('fNone').onclick=()=>{activeCountries.clear();buildFilter();render()};
+document.getElementById('fSearch').addEventListener('input',applySearch);
+document.getElementById('fSearch').addEventListener('click',e=>e.stopPropagation());
+
+/* ===== theme ===== */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('themeBtn').textContent=(t==='light')?'☾':'◐';
+  try{localStorage.setItem('holcal-theme',t)}catch(e){}
+}
+document.getElementById('themeBtn').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  applyTheme(cur==='light'?'dark':'light');
+};
+(function initTheme(){let t='dark';try{t=localStorage.getItem('holcal-theme')||'dark'}catch(e){}applyTheme(t)})();
 document.getElementById('wkClose').onclick=closeWeek;
 document.getElementById('scrim').addEventListener('click',e=>{if(e.target.id==='scrim')closeWeek()});
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeWeek();
-  else if(e.key==='ArrowLeft'&&!document.getElementById('scrim').classList.contains('show'))go(-1);
-  else if(e.key==='ArrowRight'&&!document.getElementById('scrim').classList.contains('show'))go(1);
-});
-function showError(err){
-  document.getElementById('weeks').innerHTML='<div class="state"><div class="big">Couldn\'t load the sheet</div>Check that <code>SHEET_ID</code> / <code>SHEET_NAME</code> are correct and the sheet is shared as <b>Anyone with the link → Viewer</b>.<br><br><code>'+esc(err.message||err)+'</code></div>';
-  document.getElementById('legend').style.display='none';document.getElementById('summary').style.display='none';
-}
+document.addEventListener('keydown',e=>{const open=document.getElementById('scrim').classList.contains('show');
+  if(e.key==='Escape')closeWeek();else if(e.key==='ArrowLeft'&&!open)go(-1);else if(e.key==='ArrowRight'&&!open)go(1);});
 
-/* ---------- init ---------- */
-(async function init(){
-  loadFilter();
-  try{await loadData();buildFilterList();render();}catch(err){showError(err);}
-})();
+function showError(err){document.getElementById('weeks').innerHTML='<div class="state"><div class="big">Couldn\'t load the sheet</div>Check <code>SHEET_ID</code> / <code>SHEET_NAME</code> and that the sheet is shared as <b>Anyone with the link → Viewer</b>.<br><br><code>'+esc(err.message||err)+'</code></div>';document.getElementById('legend').style.display='none';document.getElementById('summary').style.display='none'}
+
+(async function init(){try{await loadData();render()}catch(err){showError(err)}})();
 </script>
 </body>
 </html>
