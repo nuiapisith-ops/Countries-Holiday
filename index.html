@@ -161,7 +161,9 @@ button.ctl .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;backgroun
 .weekrow{position:relative;border-top:1px solid var(--grid-line)}
 .weekrow:first-child{border-top:none}
 .daygrid{display:grid;grid-template-columns:repeat(7,1fr);position:absolute;inset:0;z-index:0}
-.daycell{border-left:1px solid var(--grid-soft);padding:8px 10px}
+.daycell{border-left:1px solid var(--grid-soft);padding:8px 10px;cursor:pointer;transition:background .1s}
+.daycell:hover{background:var(--panel)}
+.daycell.we:hover,.daycell.oom:hover,.daycell.today:hover{filter:brightness(1.08)}
 .daycell:first-child{border-left:none}
 .daycell.oom{background:rgba(0,0,0,.15)}
 .daycell.we{background:var(--weekend)}
@@ -244,6 +246,15 @@ button.ctl .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;backgroun
 .hrow .hn{font-size:13.5px;font-weight:500}
 .hrow .span{margin-left:auto;font-size:11px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace}
 .emptyday{font-size:12.5px;color:var(--ink-faint);padding:4px 0 8px;font-style:italic}
+.hrow2{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--grid-soft)}
+.hrow2:last-child{border-bottom:none}
+.hrow2 .dot{width:11px;height:11px;border-radius:3px;margin-top:4px;flex-shrink:0}
+.hrow2 .hbody{display:flex;flex-direction:column;gap:3px}
+.hrow2 .htop{display:flex;align-items:center;gap:9px}
+.hrow2 .htop .cd{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px}
+.hrow2 .htop .cn{font-size:13px;color:var(--ink-dim)}
+.hrow2 .hnm{font-size:15px;font-weight:600;letter-spacing:-.005em}
+.hrow2 .hspan{font-size:12px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace}
 
 /* ---------- Tooltip / states ---------- */
 #tip{position:fixed;z-index:60;pointer-events:none;opacity:0;background:#0b1218;border:1px solid var(--grid-line);border-radius:10px;padding:10px 12px;max-width:270px;box-shadow:0 10px 34px rgba(0,0,0,.5);font-size:12px;transition:opacity .1s}
@@ -324,6 +335,8 @@ function flagFor(c){const code=ISO[key(c)];if(!code)return'🏳️';return Strin
 function colorFor(c){const k=key(c);if(PREF_COLOR[k])return PREF_COLOR[k];let h=0;for(let i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))>>>0;return hsl(h%360,42,48)}
 function hsl(h,s,l){s/=100;l/=100;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r,g,b;if(h<60){r=c;g=x;b=0}else if(h<120){r=x;g=c;b=0}else if(h<180){r=0;g=c;b=x}else if(h<240){r=0;g=x;b=c}else if(h<300){r=x;g=0;b=c}else{r=c;g=0;b=x}const f=v=>('0'+Math.round((v+m)*255).toString(16)).slice(-2);return'#'+f(r)+f(g)+f(b)}
 function textOn(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);const L=(0.2126*r+0.7152*g+0.0722*b)/255;return L>0.62?'#16201a':'#ffffff'}
+function hexA(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return'rgba('+r+','+g+','+b+','+a+')'}
+function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return'rgba('+r+','+g+','+b+','+a+')'}
 
 /* ===== date helpers ===== */
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -368,16 +381,49 @@ function buildWeeks(monthDate){
   const weeks=[];for(let i=0;i<nWeeks;i++){const days=[];for(let j=0;j<7;j++)days.push(addDays(gridStart,i*7+j));weeks.push(days)}return weeks;
 }
 function eventsForWeek(weekDays,source){
-  const wkStart=weekDays[0],wkEnd=weekDays[6];const merged={};
-  source.forEach(h=>{if(h.end<wkStart||h.start>wkEnd)return;
-    const k=h.name.toLowerCase()+'|'+h.start.getTime()+'|'+h.end.getTime();
-    if(!merged[k])merged[k]={name:h.name,start:h.start,end:h.end,countries:[]};
-    if(!merged[k].countries.some(x=>x.code===h.code))merged[k].countries.push({country:h.country,code:h.code,color:h.color,flag:h.flag});});
-  const evs=Object.values(merged).map(e=>{e.countries.sort((a,b)=>a.code.localeCompare(b.code));
-    const segStart=e.start<wkStart?wkStart:e.start,segEnd=e.end>wkEnd?wkEnd:e.end;
-    e.colStart=daysBetween(wkStart,segStart);e.colEnd=daysBetween(wkStart,segEnd);
-    e.contL=e.start<wkStart;e.contR=e.end>wkEnd;e.multi=e.countries.length>1;
-    e.color=e.multi?MULTI_COLOR:e.countries[0].color;e.span=daysBetween(e.start,e.end)+1;return e;});
+  const wkStart=weekDays[0],wkEnd=weekDays[6];
+  // 1) group ตาม "ชื่อวันหยุด" (ไม่สนช่วงวัน)
+  const byName={};
+  source.forEach(h=>{ if(h.end<wkStart||h.start>wkEnd)return;
+    const nk=h.name.toLowerCase().trim();
+    (byName[nk]=byName[nk]||{name:h.name,items:[]}).items.push(h); });
+
+  const evs=[];
+  Object.values(byName).forEach(grp=>{
+    // 2) แต่ละวันในสัปดาห์ หาว่ามีประเทศไหน active บ้าง (ของชื่อวันหยุดนี้)
+    const perDay=[];
+    for(let c=0;c<7;c++){
+      const d=weekDays[c];
+      const seen={},uniq=[];
+      grp.items.forEach(h=>{ if(d>=h.start&&d<=h.end&&!seen[h.code]){seen[h.code]=1;
+        uniq.push({country:h.country,code:h.code,color:h.color,flag:h.flag,start:h.start,end:h.end});} });
+      uniq.sort((a,b)=>a.code.localeCompare(b.code));
+      perDay[c]=uniq;
+    }
+    // 3) รวมวันที่ติดกันที่มีอย่างน้อย 1 ประเทศ เป็นแท่งเดียว (list ประเทศทั้งหมดใน run)
+    let c=0;
+    while(c<7){
+      if(perDay[c].length===0){c++;continue;}
+      let end=c;
+      while(end+1<7 && perDay[end+1].length>0) end++;
+      const seen={},countries=[];
+      for(let k=c;k<=end;k++) perDay[k].forEach(x=>{ if(!seen[x.code]){seen[x.code]=1;countries.push(x);} });
+      countries.sort((a,b)=>a.code.localeCompare(b.code));
+      const contL=c===0   && countries.some(x=>x.start<wkStart);
+      const contR=end===6 && countries.some(x=>x.end>wkEnd);
+      const minStart=new Date(Math.min(...countries.map(x=>x.start.getTime())));
+      const maxEnd  =new Date(Math.max(...countries.map(x=>x.end.getTime())));
+      evs.push({
+        name:grp.name, colStart:c, colEnd:end,
+        countries:countries.map(x=>({country:x.country,code:x.code,color:x.color,flag:x.flag})),
+        contL, contR, multi:countries.length>1,
+        color:countries.length>1?MULTI_COLOR:countries[0].color,
+        start:minStart, end:maxEnd, span:daysBetween(minStart,maxEnd)+1
+      });
+      c=end+1;
+    }
+  });
+  // 4) lane packing
   evs.sort((a,b)=>a.colStart-b.colStart||(b.colEnd-b.colStart)-(a.colEnd-a.colStart)||a.name.localeCompare(b.name));
   const laneEnds=[];evs.forEach(e=>{let lane=0;while(lane<laneEnds.length&&laneEnds[lane]>=e.colStart)lane++;laneEnds[lane]=e.colEnd;e.lane=lane;});
   return evs;
@@ -408,11 +454,12 @@ function render(){
 
     const wr=document.createElement('div');wr.className='weekrow';wr.style.minHeight=rowH+'px';
     const dg=document.createElement('div');dg.className='daygrid';
-    days.forEach(d=>{const cell=document.createElement('div');cell.className='daycell';
+    days.forEach((d,ci)=>{const cell=document.createElement('div');cell.className='daycell';
       if(d.getMonth()!==viewDate.getMonth())cell.classList.add('oom');
       if(d.getDay()===0||d.getDay()===6)cell.classList.add('we');
       const isToday=sameDay(d,today);if(isToday)cell.classList.add('today');
-      cell.innerHTML='<div class="daynum"><span>'+d.getDate()+'</span></div>';dg.appendChild(cell);});
+      cell.innerHTML='<div class="daynum"><span>'+d.getDate()+'</span></div>';
+      cell.addEventListener('click',()=>openDay(d));dg.appendChild(cell);});
     wr.appendChild(dg);
 
     const ev=document.createElement('div');ev.className='events';ev.style.height=rowH+'px';
@@ -422,15 +469,17 @@ function render(){
       bar.style.left='calc('+(e.colStart*colW)+'% + 3px)';
       bar.style.width='calc('+((e.colEnd-e.colStart+1)*colW)+'% - 6px)';
       bar.style.top=(DAYNUM_OFFSET+e.lane*LANE_H)+'px';bar.style.height=BAR_H+'px';
-      bar.style.background=e.color;bar.style.color=textOn(e.color);
+      bar.style.background=hexA(e.color,.82);bar.style.color=textOn(e.color);
       const codes=e.countries.map(x=>x.code).join(' ');
       bar.innerHTML=(e.contL?'<span class="arrow">◂</span>':'')+'<span class="nm">'+esc(e.name)+'</span><span class="codes">'+esc(codes)+'</span>'+(e.contR?'<span class="arrow">▸</span>':'');
-      attachTip(bar,e);bar.addEventListener('click',()=>openWeek(wi,days));ev.appendChild(bar);
+      attachTip(bar,e);
+      bar.addEventListener('click',ev2=>{const r=ev.getBoundingClientRect();let col=Math.floor((ev2.clientX-r.left)/r.width*7);col=Math.max(0,Math.min(6,col));openDay(days[col]);});
+      ev.appendChild(bar);
     });
     if(overflow){for(let col=0;col<7;col++){const hidden=evs.filter(e=>e.lane>=MAX&&e.colStart<=col&&e.colEnd>=col).length;
       if(hidden>0){const more=document.createElement('div');more.className='more';
         more.style.left='calc('+(col*colW)+'% + 3px)';more.style.width='calc('+colW+'% - 6px)';more.style.top=(DAYNUM_OFFSET+MAX*LANE_H)+'px';
-        more.textContent='+'+hidden+' more';more.addEventListener('click',()=>openWeek(wi,days));ev.appendChild(more);}}}
+        more.textContent='+'+hidden+' more';more.addEventListener('click',()=>openDay(days[col]));ev.appendChild(more);}}}
     wr.appendChild(ev);
     const open=document.createElement('div');open.className='weekopen';open.textContent='⤢';open.title='Open week detail';
     open.addEventListener('click',()=>openWeek(wi,days));wr.appendChild(open);
@@ -533,6 +582,30 @@ function openWeek(wi,days){
   body.innerHTML=html;document.getElementById('scrim').classList.add('show');
 }
 function closeWeek(){document.getElementById('scrim').classList.remove('show')}
+
+/* ===== day detail (คลิกที่วัน) ===== */
+function openDay(d){
+  const src=visible();const occ=[];
+  src.forEach(h=>{ if(d>=h.start&&d<=h.end) occ.push(h); });
+  occ.sort((a,b)=>a.country.localeCompare(b.country)||a.name.localeCompare(b.name));
+  const isToday=sameDay(d,ymd(new Date()));
+  document.getElementById('wkEyebrow').textContent=DOW[d.getDay()]+(isToday?' · today':' · holidays');
+  document.getElementById('wkTitle').textContent=d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear();
+  const body=document.getElementById('wkBody');
+  if(!occ.length){
+    body.innerHTML='<div class="dayblock"><div class="emptyday">No holidays on this day.</div></div>';
+  }else{
+    body.innerHTML='<div class="dayblock">'+occ.map(h=>{
+      const span=daysBetween(h.start,h.end)+1, idx=daysBetween(h.start,d)+1;
+      const spanTxt=span>1?(fmtLong(h.start)+'  →  '+fmtLong(h.end)+'  ·  day '+idx+' of '+span):'Single-day holiday';
+      return '<div class="hrow2"><span class="dot" style="background:'+h.color+'"></span>'+
+        '<div class="hbody"><div class="htop"><span class="cd" style="color:'+h.color+'">'+h.code+'</span>'+
+        '<span class="cn">'+h.flag+' '+esc(h.country)+'</span></div>'+
+        '<div class="hnm">'+esc(h.name)+'</div><div class="hspan">'+spanTxt+'</div></div></div>';
+    }).join('')+'</div>';
+  }
+  document.getElementById('scrim').classList.add('show');
+}
 
 /* ===== tooltip ===== */
 const tip=document.getElementById('tip');
